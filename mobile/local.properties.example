@@ -1,0 +1,3 @@
+# Copy to local.properties after installing Android Studio.
+# Typical Windows path:
+sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
