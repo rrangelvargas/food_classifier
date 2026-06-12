@@ -14,7 +14,7 @@ internal object ForeignColumnFilter {
             .replace(foreignColumnHeader, " ")
             .replace(hyphenatedForeignFragment, " ")
             .replace(Regex("""\s+ne\s+"""), " ")
-            .replace(Regex("""\s+"""), " ")
+            .replace(Regex("""[^\S\n]+"""), " ")
             .trim()
     }
 }

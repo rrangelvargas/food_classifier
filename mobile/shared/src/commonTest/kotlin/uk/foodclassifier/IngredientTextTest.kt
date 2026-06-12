@@ -44,6 +44,32 @@ class IngredientTextTest {
     }
 
     @Test
+    fun detectsGarbledStabilisersAsFunctionalLabel() {
+        assertTrue(isFunctionalLabel("Sabilisers"))
+        assertEquals(
+            listOf("Guar Gum"),
+            expandFunctionalLabelToIngredients("Sabilisers: Guar Gum"),
+        )
+    }
+
+    @Test
+    fun detectsGarbledAcidityRegulatorAsFunctionalLabel() {
+        assertTrue(isFunctionalLabel("Acidity Requlator"))
+        assertEquals(
+            listOf("Sodium Hydroxide"),
+            expandFunctionalLabelToIngredients("Acidity Requlator: Sodium Hydroxide"),
+        )
+    }
+
+    @Test
+    fun expandsFunctionalLabelWithParentheses() {
+        assertEquals(
+            listOf("steviol glycosides from stevia"),
+            expandFunctionalLabelToIngredients("sweetener (steviol glycosides from stevia)"),
+        )
+    }
+
+    @Test
     fun parserFormatsIngredientsOnePerLine() {
         assertEquals(
             "Reduced Fat Soft Cheese (Milk)\nSalt\nGuar Gum",

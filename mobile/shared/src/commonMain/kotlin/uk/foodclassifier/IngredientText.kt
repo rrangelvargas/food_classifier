@@ -227,6 +227,7 @@ internal fun normalizeIngredientForMatching(value: String): String {
 
 internal val functionalLabelPrefixes = listOf(
     "sweeteners",
+    "sweetener",
     "humectant",
     "bulking agent",
     "emulsifier",
@@ -244,14 +245,45 @@ internal val functionalLabelPrefixes = listOf(
     "gelling agent",
 )
 
+private val functionalLabelOcrPatterns = listOf(
+    Regex("""(?i)^stabl\w*"""),
+    Regex("""(?i)^sabil\w*"""),
+    Regex("""(?i)\w*abilis\w*"""),
+    Regex("""(?i)sweetener"""),
+    Regex("""(?i)humectant"""),
+    Regex("""(?i)bulking\s*\S*\s*agen"""),
+    Regex("""(?i)emulsif"""),
+    Regex("""(?i)(?:rai[sz]|kais)\w*\s*agen"""),
+        Regex("""(?i)acidity\s*reg\w*"""),
+    Regex("""(?i)preserv"""),
+    Regex("""(?i)antioxid"""),
+    Regex("""(?i)thickener"""),
+    Regex("""(?i)gelling\s*agent"""),
+    Regex("""(?i)colou?r"""),
+)
+
 internal fun isFunctionalLabel(label: String): Boolean {
-    val lower = label.lowercase().trim()
-    return functionalLabelPrefixes.any { prefix ->
-        lower == prefix ||
-            lower.startsWith(prefix) ||
-            prefix.startsWith(lower) ||
-            lower.removeSuffix("s") == prefix.removeSuffix("s")
+    val lower = label.lowercase().trim().trimEnd(':', '.', ',', ';')
+    if (lower.isBlank()) {
+        return false
     }
+    if (lower.contains(',') || lower.contains('(') || lower.contains('[')) {
+        return false
+    }
+    if (lower.length > 32) {
+        return false
+    }
+    if (functionalLabelPrefixes.any { prefix ->
+            lower == prefix ||
+                lower.startsWith(prefix) ||
+                prefix.startsWith(lower) ||
+                lower.removeSuffix("s") == prefix.removeSuffix("s")
+        }
+    ) {
+        return true
+    }
+    return functionalLabelOcrPatterns.any { it.containsMatchIn(lower) } ||
+        (lower.contains("acidity") && (lower.contains("reg") || lower.contains("req")))
 }
 
 internal fun isFunctionalLabelClause(clause: String): Boolean {
@@ -294,6 +326,15 @@ internal fun expandFunctionalLabelToIngredients(segment: String): List<String> {
             if (remainder.isBlank()) {
                 return emptyList()
             }
+            return splitIngredientsAfterFunctionalLabel(remainder)
+        }
+    }
+
+    val parenStart = trimmed.indexOf('(')
+    if (parenStart > 0 && trimmed.endsWith(')')) {
+        val label = trimmed.substring(0, parenStart).trim()
+        val remainder = trimmed.substring(parenStart + 1, trimmed.length - 1).trim()
+        if (isFunctionalLabel(label) && remainder.isNotBlank()) {
             return splitIngredientsAfterFunctionalLabel(remainder)
         }
     }
